@@ -43,13 +43,12 @@ export function NewsMap({
       center: DEFAULT_MAP_CENTER,
       zoom: DEFAULT_MAP_ZOOM,
       zoomControl: false,
-      attributionControl: true,
+      attributionControl: false,
     })
 
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
     tileLayerRef.current = L.tileLayer(isDarkMode ? MAP_TILE_DARK : MAP_TILE_LIGHT, {
-      attribution: MAP_ATTRIBUTION,
       maxZoom: 18,
     }).addTo(map)
 

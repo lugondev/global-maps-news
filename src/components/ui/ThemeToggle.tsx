@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, ReactNode } from 'react'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -37,7 +37,7 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
 
   if (!mounted) return null
 
-  const icons: Record<Theme, JSX.Element> = {
+  const icons: Record<Theme, ReactNode> = {
     light: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
