@@ -9,11 +9,12 @@ import {
   DEFAULT_MAP_ZOOM,
   MAP_TILE_DARK,
   MAP_TILE_LIGHT,
-  MAP_ATTRIBUTION,
   createMarkerIcon,
 } from '@/lib/utils/mapHelpers'
 import { NewsMarkerPopup } from './NewsMarkerPopup'
 import { createRoot } from 'react-dom/client'
+
+const COUNTRIES_GEOJSON_URL = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson'
 
 interface NewsMapProps {
   newsItems: NewsItem[]
@@ -34,7 +35,9 @@ export function NewsMap({
   const mapRef = useRef<L.Map | null>(null)
   const markersRef = useRef<Map<string, L.Marker>>(new Map())
   const tileLayerRef = useRef<L.TileLayer | null>(null)
+  const geoJsonLayerRef = useRef<L.GeoJSON | null>(null)
   const [isMapReady, setIsMapReady] = useState(false)
+  const [hoveredCountry, setHoveredCountry] = useState<string | null>(null)
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
@@ -51,6 +54,48 @@ export function NewsMap({
     tileLayerRef.current = L.tileLayer(isDarkMode ? MAP_TILE_DARK : MAP_TILE_LIGHT, {
       maxZoom: 18,
     }).addTo(map)
+
+    fetch(COUNTRIES_GEOJSON_URL)
+      .then(res => res.json())
+      .then(data => {
+        if (!map) return
+
+        const defaultStyle: L.PathOptions = {
+          fillColor: 'transparent',
+          fillOpacity: 0,
+          color: 'transparent',
+          weight: 0,
+        }
+
+        const hoverStyle: L.PathOptions = {
+          fillColor: '#3B82F6',
+          fillOpacity: 0.15,
+          color: '#3B82F6',
+          weight: 2,
+        }
+
+        geoJsonLayerRef.current = L.geoJSON(data, {
+          style: defaultStyle,
+          onEachFeature: (feature, layer) => {
+            layer.on({
+              mouseover: (e) => {
+                const target = e.target as L.Path
+                target.setStyle(hoverStyle)
+                target.bringToBack()
+                setHoveredCountry(feature.properties?.ADMIN || feature.properties?.name || 'Unknown')
+              },
+              mouseout: (e) => {
+                const target = e.target as L.Path
+                target.setStyle(defaultStyle)
+                setHoveredCountry(null)
+              },
+            })
+          },
+        }).addTo(map)
+
+        geoJsonLayerRef.current.bringToBack()
+      })
+      .catch(console.error)
 
     mapRef.current = map
     setIsMapReady(true)
@@ -141,6 +186,14 @@ export function NewsMap({
   return (
     <div className={`relative w-full h-full ${className}`}>
       <div ref={mapContainerRef} className="w-full h-full rounded-lg overflow-hidden" />
+
+      {hoveredCountry && (
+        <div className="absolute top-4 right-4 z-[1000] bg-zinc-900/90 backdrop-blur-sm 
+                        rounded-lg px-4 py-2 border border-zinc-700 shadow-lg">
+          <div className="text-xs text-zinc-400">Region</div>
+          <div className="text-lg font-semibold text-white">{hoveredCountry}</div>
+        </div>
+      )}
       
       {newsItems.length > 0 && (
         <button
